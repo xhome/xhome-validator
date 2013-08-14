@@ -6,8 +6,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.Map;
 import java.util.Properties;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.xhome.util.ClassUtils;
 import org.xhome.util.StringUtils;
 import org.xhome.validator.mapping.Mapping;
@@ -23,11 +24,11 @@ public final class ValidatorMapping {
 	private Map<String, String>			validatorMappings;
 	private Map<String, Validator>		cachedValidators;
 	private Map<String, Validator[]>	cachedValidatorMappings;
-	private Log							logger;
+	private Logger						logger;
 	private static ValidatorMapping		validatorMapping	= new ValidatorMapping();
 	
 	private ValidatorMapping() {
-		logger = LogFactory.getLog(ValidatorMapping.class);
+		logger = LoggerFactory.getLogger(ValidatorMapping.class);
 		validatorMappings = new HashMap<String, String>();
 		cachedValidators = new HashMap<String, Validator>();
 		cachedValidatorMappings = new HashMap<String, Validator[]>();
@@ -39,9 +40,21 @@ public final class ValidatorMapping {
 				try {
 					Mapping map = (Mapping) clazz.newInstance();
 					Map<String, String> vmaps = map.validatorMappings();
-					validatorMappings.putAll(vmaps);
-					logger.debug("load validator mappings from "
-							+ clazz.getName());
+					if (vmaps != null) {
+						Set<String> keys = vmaps.keySet();
+						for(String key : keys) {
+							if (key == null) {
+								continue;
+							}
+							if (!key.startsWith("/")) {
+								validatorMappings.put("/" + key, (String) vmaps.get(key));
+							} else {
+								validatorMappings.put(key, (String) vmaps.get(key));
+							}
+						}
+						validatorMappings.putAll(vmaps);
+						logger.debug("load validator mappings from {}", clazz.getName());
+					}
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -56,7 +69,14 @@ public final class ValidatorMapping {
 			Set<Object> vs = p.keySet();
 			for (Object v : vs) {
 				String key = (String) v;
-				validatorMappings.put(key, (String) p.get(key));
+				if (key == null) {
+					continue;
+				}
+				if (!key.startsWith("/")) {
+					validatorMappings.put("/" + key, (String) p.get(key));
+				} else {
+					validatorMappings.put(key, (String) p.get(key));
+				}
 			}
 		} catch (Exception e) {}
 		
@@ -95,11 +115,9 @@ public final class ValidatorMapping {
 		
 		if (logger.isDebugEnabled()) {
 			if (v != null) {
-				logger.debug("find validator " + validator + " for [" + uri
-						+ "]");
+				logger.debug("find validator {} for [{}]", validator, uri);
 			} else {
-				logger.debug("can't find validator " + validator + " for ["
-						+ uri + "]");
+				logger.debug("can't find validator {} for [{}]", validator, uri);
 			}
 		}
 		
@@ -124,9 +142,9 @@ public final class ValidatorMapping {
 		}
 		if (logger.isDebugEnabled()) {
 			if (validator != null) {
-				logger.debug("find validator " + name);
+				logger.debug("find validator {}", name);
 			} else {
-				logger.debug("can't find validator " + name);
+				logger.debug("can't find validator {}", name);
 			}
 		}
 		
