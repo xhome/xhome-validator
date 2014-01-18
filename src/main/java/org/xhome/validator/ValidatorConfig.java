@@ -23,7 +23,7 @@ public final class ValidatorConfig {
 	
 	private Log						logger;
 	private Map<String, String>		validatorConfigs;
-	private static ValidatorConfig	validationConfig		= new ValidatorConfig();
+	private static ValidatorConfig	validationConfig;
 	
 	private ValidatorConfig() {
 		logger = LogFactory.getLog(ValidatorMapping.class);
@@ -40,9 +40,11 @@ public final class ValidatorConfig {
 				try {
 					Config config = (Config) clazz.newInstance();
 					Map<String, String> vconfigs = config.validatorConfigs();
-					validatorConfigs.putAll(vconfigs);
-					logger.debug("load validator configs from "
-							+ clazz.getName());
+					if (vconfigs != null && !vconfigs.isEmpty()) {
+						validatorConfigs.putAll(vconfigs);
+						logger.debug("load validator configs from "
+								+ clazz.getName());	
+					}
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
 				}
@@ -63,6 +65,13 @@ public final class ValidatorConfig {
 	}
 	
 	public static ValidatorConfig getInstance() {
+		if (validationConfig == null) {
+			synchronized (ValidatorConfig.class) {
+				if (validationConfig == null) {
+					validationConfig = new ValidatorConfig();
+				}
+			}
+		}
 		return validationConfig;
 	}
 	

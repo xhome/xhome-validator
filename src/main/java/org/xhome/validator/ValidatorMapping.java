@@ -9,6 +9,7 @@ import java.util.Properties;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xhome.common.constant.Status;
 import org.xhome.util.ClassUtils;
 import org.xhome.util.StringUtils;
 import org.xhome.validator.mapping.Mapping;
@@ -20,16 +21,19 @@ import org.xhome.validator.mapping.Mapping;
  * @date Feb 11, 20139:52:11 PM
  */
 public final class ValidatorMapping {
-	
-	private Map<String, String>			validatorMappings;
+
+	private Map<String, String>			validatorMappings; // 请求连接与校验器的映射表
+	private Map<String, Short>			codeMappings; // 错误状态码映射表
 	private Map<String, Validator>		cachedValidators;
 	private Map<String, Validator[]>	cachedValidatorMappings;
 	private Logger						logger;
-	private static ValidatorMapping		validatorMapping	= new ValidatorMapping();
+
+	private static ValidatorMapping		validatorMapping;
 	
 	private ValidatorMapping() {
 		logger = LoggerFactory.getLogger(ValidatorMapping.class);
 		validatorMappings = new HashMap<String, String>();
+		codeMappings = new HashMap<String, Short>();
 		cachedValidators = new HashMap<String, Validator>();
 		cachedValidatorMappings = new HashMap<String, Validator[]>();
 		
@@ -40,7 +44,7 @@ public final class ValidatorMapping {
 				try {
 					Mapping map = (Mapping) clazz.newInstance();
 					Map<String, String> vmaps = map.validatorMappings();
-					if (vmaps != null) {
+					if (vmaps != null && !vmaps.isEmpty()) {
 						Set<String> keys = vmaps.keySet();
 						for(String key : keys) {
 							if (key == null) {
@@ -54,6 +58,11 @@ public final class ValidatorMapping {
 						}
 						validatorMappings.putAll(vmaps);
 						logger.debug("load validator mappings from {}", clazz.getName());
+					}
+					Map<String, Short> cmaps = map.codeMappings();
+					if (cmaps != null && !cmaps.isEmpty()) {
+						codeMappings.putAll(cmaps);
+						logger.debug("load code mappings from {}", clazz.getName());
 					}
 				} catch (Exception e) {
 					logger.error(e.getMessage(), e);
@@ -83,6 +92,13 @@ public final class ValidatorMapping {
 	}
 	
 	public static ValidatorMapping getInstance() {
+		if (validatorMapping == null) {
+			synchronized (ValidatorMapping.class) {
+				if (validatorMapping == null) {
+					validatorMapping = new ValidatorMapping();
+				}
+			}
+		}
 		return validatorMapping;
 	}
 	
@@ -170,6 +186,16 @@ public final class ValidatorMapping {
 			}
 		}
 		return null;
+	}
+	
+	/**
+	 * 将字符窜的错误码转换为整数错误状态码
+	 * @param errorCode 字符窜的错误码
+	 * @return
+	 */
+	public Short convertErrorCode(String errorCode) {
+		Short s = codeMappings.get(errorCode);
+		return s == null ? Status.ERROR : s;
 	}
 	
 }
