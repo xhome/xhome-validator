@@ -8,7 +8,6 @@
     <name>xhome-validator</name>
 
     <properties>
-        <xhome-util.version>1.0</xhome-util.version>
         <xhome-common.version>1.0</xhome-common.version>
         <slf4j-api.version>1.7.5</slf4j-api.version>
         <spring.version>3.2.4.RELEASE</spring.version>
@@ -19,12 +18,6 @@
     </properties>
 
     <dependencies>
-        <dependency>
-            <groupId>org.xhome</groupId>
-            <artifactId>xhome-util</artifactId>
-            <version>${xhome-util.version}</version>
-            <scope>provided</scope>
-        </dependency>
         <dependency>
             <groupId>org.xhome</groupId>
             <artifactId>xhome-common</artifactId>
